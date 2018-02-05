@@ -51,63 +51,70 @@ function countSKUs() {
   //Invoking the countSKUs function to start the whole process
   countSKUs();
 
-  //Retrieve the SKUs
-  function retrieveSKUs(){
 
-    
 
-    // This function will be invoked multiple times if there are more than 250 coupons.
+//Retrieve the SKUs
+let countSKUrequests = 0;
+function retrieveSKUs(){
+
+    // This function will be invoked multiple times if there are more than 250 SKUs.
     // The current page is passed in the pagenum parameter.
     function skuAPIrequest(pagenum){
+        console.log(`Retrieving page: ${pagenum}`);
         return new Promise((resolve,reject)=> {
 
         options.path = '/api/v2/products/skus?limit=250&page=' + pagenum;
     
         const getSKUs = https.request(options, function(response){
-        let body = '';
-        response.on('data', (d) => {
-          body += d;
+            let body = '';
+            response.on('data', (d) => {
+            body += d;
+            });
+            response.on('end', () => {
+                resolve(body);
+            });
         });
-        response.on('end', () => {
-            resolve();
-            checkPageForOrphans(body);
-            pages--;
-            checkProgress();
+    
+        getSKUs.on('error', (e) => {
+            reject(e)
+            console.log(e);
         });
-      });
-    });
-      getSKUs.on('error', (e) => {
-        reject(e)
-        console.log(e);
-      });
-      getSKUs.end();
-    };
+        getSKUs.end();
+        });
+    }
 
     //Invoke the API request, passing in the pages variable set in countRequest
     //skuAPIrequest(pages);
-
-  }
-function checkProgress(){
     
-    if (pages < 1) {
-        console.log(`Orphaned SKU IDs: ${orphans}`);
-        return postScanPrompt();    
-    } else {
-        console.log(`Scanning page: ${pages}`);
-        retrieveSKUs();
+    for (i=1; i<pages+1; i++) {
+        skuAPIrequest(i).then((d)=> {
+            checkPageForOrphans(d);
+        }).then(()=>{
+            checkProgress();            
+        })
     }
-        
+
+}
+function checkProgress(){
+    console.log(`Progress: ${countSKUrequests}\n`);
+    if (countSKUrequests == pages) {
+        console.log(`Complete\n`);
+        console.log(`Orphaned SKU IDs: ${orphans}\n`);
+        return postScanPrompt();    
+    }     
 }
 
 // Ultimately need to check for product_id = 0
 // Guaranteed ID used to verify results in testing
 function checkPageForOrphans(pageData){
+    //console.log(`Scanning page: ${countSKUrequests}`);
     let pageSKUs = JSON.parse(pageData);
     pageSKUs.forEach(SKU => {
-        if (SKU.product_id == '33952'){
+        if (SKU.product_id == '0'){
             orphans.push(SKU.id);
         }
-    })
+    });
+    countSKUrequests++;
 }
 
 rl.on('close', ()=>{
@@ -135,7 +142,7 @@ function postScanPrompt(){
 }
 
 function orphanRemovePrompt(){
-    rl.question('Remove orphans? (y/n): ', (ans) => {
+    rl.question(`Remove ${orphans.length} orphans? (y/n): `, (ans) => {
         let answer = ans.toLowerCase();
 
         if (answer == 'y'){
@@ -157,8 +164,9 @@ function orphanRemovePrompt(){
 function removeOrphans(){
     let range = orphans.length;
     let count = 0;
-    return new Promise((resolve, reject) => {
+    checkCount(count);
         orphans.forEach(id => {
+            return new Promise((resolve, reject) => {
             options.path = `/api/v2/products/skus/${id}`;
             options.method = 'DELETE';
             const delRequest = https.request(options, (response)=> {
@@ -168,33 +176,23 @@ function removeOrphans(){
                 });
                 response.on('end', ()=>{
                     console.log(`Orphan removed: ${id}`)
-                    count++;
+                    resolve(count++);
                 });
             });
             delRequest.on('error', (err) => {
                 console.log(`Error: ${err}`);
             })
             delRequest.end();
-        });
-        if (checkCount(count) == true){
-            console.log('dones');
-            resolve(range);
-        } else{
+        }).then(()=>{
             checkCount(count);
-        }
-    }).then((r)=>{
-        rl.write(`\n${r} orphans cleared.\n`);
-        rl.write('\n*****\nYou cast fireball\n*****\n');
-        rl.close();
+        });      
     });
     
-    function checkCount(count){
-        if (count >= range) {
-            return true;
+    function checkCount(ct){
+        if (ct >= range) {
+            rl.write(`\n${ct} orphans cleared.\n`);
+            rl.close();
         }
-        console.log(count);
-        count++;
-        return false;
     }
 
     
