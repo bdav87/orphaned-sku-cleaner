@@ -84,13 +84,14 @@ function retrieveSKUs(){
     }
 
     //Invoke the API request, passing in the pages variable set in countRequest
-    //skuAPIrequest(pages);
-    
+
     for (i=1; i<pages+1; i++) {
         skuAPIrequest(i).then((d)=> {
             checkPageForOrphans(d);
         }).then(()=>{
             checkProgress();            
+        }).catch((e)=>{
+            console.log(`Error: ${e}`);
         })
     }
 
