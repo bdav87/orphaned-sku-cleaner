@@ -1,0 +1,16 @@
+{
+  "name": "orphan-tool",
+  "version": "1.0.0",
+  "description": "Remove orphaned SKUs on BigCommerce stores",
+  "main": "removeOrphans.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Brian Davenport",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "dotenv": "^5.0.0",
+    "https": "^1.0.0"
+  }
+}
