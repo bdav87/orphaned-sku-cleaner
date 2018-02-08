@@ -27,7 +27,7 @@ let orphans = [];
 function countSKUs() {
     
     options.path = '/api/v2/products/skus/count';
-
+    options.method = 'GET';
     const countRequest = https.request(options, function(response){
       response.on('data', (d) => {
         count = JSON.parse(d).count;
@@ -35,17 +35,20 @@ function countSKUs() {
 
         pages = Math.ceil(count/250);
         console.log('Pages: ' + pages);
-      })
-      .on('end', () => {
+      });
+      response.on('end', () => {
         //Invoke callback function
         console.log(`Scanning page: ${pages}`);
         retrieveSKUs();
-      })
-    })
-      .on('error', (e) => {
+      });
+      response.on('error', (e)=>{
+          console.log(`API responded with an error: ${e}`);
+      });
+    });
+      countRequest.on('error', (e) => {
         console.log("error: " + e);
-      })
-      .end();
+      });
+      countRequest.end();
     
   };
   //Invoking the countSKUs function to start the whole process
@@ -143,10 +146,21 @@ function postScanPrompt(){
 }
 
 function orphanRemovePrompt(){
+    if (orphans.length > 400){
+        rl.write(`\nThere are too many orphans to remove safely.
+        \nAllocating 400 for removal
+        \nOriginal number of orphans: ${orphans.length}\n`);
+
+        orphans = orphans.slice(0, 400);
+        console.log(`Allocated for removal: ${orphans.length}\n`);
+        
+    }
+
     rl.question(`Remove ${orphans.length} orphans? (y/n): `, (ans) => {
         let answer = ans.toLowerCase();
 
         if (answer == 'y'){
+            
             removeOrphans();
         }
         if (answer == 'n'){
@@ -192,7 +206,24 @@ function removeOrphans(){
     function checkCount(ct){
         if (ct >= range) {
             rl.write(`\n${ct} orphans cleared.\n`);
-            rl.close();
+            (function scanAgainPrompt(){
+                rl.question('\nScan again? (y/n): ', (ans)=>{
+                    if (ans.toLowerCase() == 'y'){
+                        count = 0;
+                        pages = 0;
+                        values = [];
+                        orphans = [];
+                        countSKUrequests = 0;
+                        return countSKUs();
+                    }
+                    if (ans.toLowerCase() == 'n'){
+                        return rl.close();
+                    }
+                    if (ans.toLowerCase() != 'y' && ans.toLowerCase() != 'n') {
+                        return scanAgainPrompt();
+                    }
+                });
+            })();
         }
     }
 
