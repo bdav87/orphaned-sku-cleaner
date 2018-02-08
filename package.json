@@ -4,7 +4,7 @@
   "description": "Remove orphaned SKUs on BigCommerce stores",
   "main": "removeOrphans.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node removeOrphans.js"
   },
   "author": "Brian Davenport",
   "license": "ISC",
