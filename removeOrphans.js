@@ -25,34 +25,39 @@ let count = 0, pages = 0, values = [];
 let orphans = [];
 
 function countSKUs() {
-    
+    let body = '';
     options.path = '/api/v2/products/skus/count';
     options.method = 'GET';
     const countRequest = https.request(options, function(response){
-      response.on('data', (d) => {
-        count = JSON.parse(d).count;
-        console.log('Total SKUs: ' + count);
+        if (response.statusCode != '200') {
+            console.log('You were not authorized - check API credentials');
+            return rl.close();
+        }
+        response.on('data', (d) => {
+            body += d;
+            count = JSON.parse(body).count;
+            console.log('Total SKUs: ' + count);
 
-        pages = Math.ceil(count/250);
-        console.log('Pages: ' + pages);
-      });
-      response.on('end', () => {
-        //Invoke callback function
-        console.log(`Scanning page: ${pages}`);
-        retrieveSKUs();
-      });
-      response.on('error', (e)=>{
-          console.log(`API responded with an error: ${e}`);
-      });
+            pages = Math.ceil(count/250);
+            console.log('Pages: ' + pages);
+        });
+        response.on('end', () => {
+            //Invoke callback function
+            console.log(`Scanning page: ${pages}`);
+            retrieveSKUs();
+        });
+        response.on('error', (e)=>{
+            console.log(`API responded with an error: ${e}`);
+        });
     });
-      countRequest.on('error', (e) => {
-        console.log("error: " + e);
-      });
-      countRequest.end();
+        countRequest.on('error', (e) => {
+            console.log("error: " + e);
+        });
+        countRequest.end();
     
   };
-  //Invoking the countSKUs function to start the whole process
-  countSKUs();
+//Invoking the countSKUs function to start the whole process
+countSKUs();
 
 
 
