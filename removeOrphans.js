@@ -97,6 +97,7 @@ function retrieveSKUs(){
         skuAPIrequest(i).then((d)=> {
             checkPageForOrphans(d);
         }).then(()=>{
+            console.log('')
             checkProgress();            
         }).catch((e)=>{
             console.log(`Error: ${e}`);
@@ -105,7 +106,7 @@ function retrieveSKUs(){
 
 }
 function checkProgress(){
-    console.log(`Progress: ${countSKUrequests}\n`);
+    //console.log(`Progress: ${countSKUrequests}\n`);
     if (countSKUrequests == pages) {
         console.log(`Complete\n`);
         console.log(`Orphaned SKU IDs: ${orphans}\n`);
