@@ -112,7 +112,7 @@ let countSKUrequests = 0;
 function checkPageForOrphans(pageData) {
     let pageSKUs = JSON.parse(pageData);
     pageSKUs.forEach(SKU => {
-        if (SKU.product_id == '0') {
+        if (SKU.product_id == '35979') {
             orphans.push(SKU.id);
         }
     });
@@ -172,9 +172,10 @@ function sleep(ms) {
 
 async function removeOrphans(orphan_list) {
     let progbar = require('pace')(orphan_list.length);
-    
+    let deleted = 0;
+
     for (index in orphan_list) {
-        progbar.op();
+        
         if (index != 0 && index % 10 === 0) {
             await sleep(100);
         }
@@ -182,17 +183,20 @@ async function removeOrphans(orphan_list) {
         options.method = 'DELETE';
 
         https.request(options, response => {
+            
             response.on('data', () => {});
             response.on('end', () => {
+                progbar.op();
+                deleted++
+                if (deleted == orphan_list.length) {
+                    rl.write(`\n\n${deleted} orphaned SKUs removed.\n`);
+                    rl.close();
+                }
             });
             response.on('error', (err) => {
                 console.log('Request error', error);
             })
         }).end();
-
-        if (index == orphan_list.length - 1) {
-            rl.write('\nOrphans removed.\n');
-            rl.close();
-        }
     }
 }
+    
