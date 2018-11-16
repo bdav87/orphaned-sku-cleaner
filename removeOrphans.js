@@ -112,7 +112,7 @@ let countSKUrequests = 0;
 function checkPageForOrphans(pageData) {
     let pageSKUs = JSON.parse(pageData);
     pageSKUs.forEach(SKU => {
-        if (SKU.product_id == '35979') {
+        if (SKU.product_id == '0') {
             orphans.push(SKU.id);
         }
     });
@@ -189,7 +189,7 @@ async function removeOrphans(orphan_list) {
                 progbar.op();
                 deleted++
                 if (deleted == orphan_list.length) {
-                    rl.write(`\n\n${deleted} orphaned SKUs removed.\n`);
+                    rl.write(`\n${deleted} orphaned SKUs removed.\n`);
                     rl.close();
                 }
             });
