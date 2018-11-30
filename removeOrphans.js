@@ -170,33 +170,36 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function removeOrphans(orphan_list) {
+function removeOrphans(orphan_list) {
     let progbar = require('pace')(orphan_list.length);
     let deleted = 0;
 
-    for (index in orphan_list) {
-        
-        if (index != 0 && index % 10 === 0) {
-            await sleep(100);
-        }
-        options.path = `/api/v2/products/skus/${orphan_list[index]}`;
-        options.method = 'DELETE';
+    orphan_list.forEach(async (orphan, index) => {
+    
+        await sleep(100)
+        .then(() => deleteSKU())
+        .catch(err => console.log('err', err));
 
-        https.request(options, response => {
-            
-            response.on('data', () => {});
-            response.on('end', () => {
-                progbar.op();
-                deleted++
-                if (deleted == orphan_list.length) {
-                    rl.write(`\n${deleted} orphaned SKUs removed.\n`);
-                    rl.close();
-                }
-            });
-            response.on('error', (err) => {
-                console.log('Request error', error);
-            })
-        }).end();
-    }
+        function deleteSKU() {
+            options.path = `/api/v2/products/skus/${orphan}`;
+            options.method = 'DELETE';
+    
+            https.request(options, response => {
+                
+                response.on('data', () => {});
+                response.on('end', () => {
+                    progbar.op();
+                    deleted++;
+                    if (deleted == orphan_list.length) {
+                        rl.write(`\n${deleted} orphaned SKUs removed.\n`);
+                        rl.close();
+                    }
+                });
+                response.on('error', (err) => {
+                    console.log('Request error', error);
+                })
+            }).end();
+        }
+    });
 }
     
